@@ -1,0 +1,22 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SEARXNG_URL: http://searxng:8080
+    depends_on:
+      - searxng
+
+  searxng:
+    image: searxng/searxng:latest
+    volumes:
+      - ./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-change-me}
+    # Not published to the host by default; uncomment to debug SearXNG directly.
+    # ports:
+    #   - "8080:8080"
