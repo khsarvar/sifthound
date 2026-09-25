@@ -36,8 +36,9 @@ LangChain, through [`langchain-tavily`](https://github.com/tavily-ai/langchain-t
 ```python
 from langchain_tavily import TavilySearch
 
-search = TavilySearch(max_results=5, tavily_api_key="your-trawl-key",
-                      api_base_url="http://localhost:8000")
+search = TavilySearch(
+    max_results=5, tavily_api_key="your-trawl-key", api_base_url="http://localhost:8000"
+)
 search.invoke({"query": "what is BM25 ranking"})
 ```
 
