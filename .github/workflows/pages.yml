@@ -1,6 +1,6 @@
 name: Pages
 
-# Deploys the project site in docs/ to https://khsarvar.github.io/sifthound/
+# Deploys the project site in docs/ to https://sarvarkh.com/sifthound/
 on:
   push:
     branches: [main]

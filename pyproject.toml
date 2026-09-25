@@ -39,7 +39,7 @@ dependencies = [
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff==0.16.9"]
 
 [project.urls]
-Homepage = "https://khsarvar.github.io/sifthound/"
+Homepage = "https://sarvarkh.com/sifthound/"
 Source = "https://github.com/khsarvar/sifthound"
 Issues = "https://github.com/khsarvar/sifthound/issues"
 
