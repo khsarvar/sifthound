@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/khsarvar/sifthound/actions/workflows/ci.yml/badge.svg)](https://github.com/khsarvar/sifthound/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/sifthound.svg)](https://pypi.org/project/sifthound/)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 
 **Sifthound is an open-source, self-hosted web search API for AI agents and LLM apps, and a drop-in
@@ -45,22 +46,47 @@ search.invoke({"query": "what is BM25 ranking"})
 Tested with `tavily-python` 0.8.4 (search, extract, crawl, map; sync and async) and
 `langchain-tavily` 0.2.18 (search, extract).
 
-## Quick start (Docker)
+## Quick start
+
+### Docker Compose (includes SearXNG)
+
+The full stack, with a SearXNG instance for `/search`, using the published image:
 
 ```bash
-cp .env.example .env          # set API_KEYS and (optionally) ANTHROPIC_API_KEY
-docker compose up --build
+git clone https://github.com/khsarvar/sifthound && cd sifthound
+cp .env.example .env          # optional: set API_KEYS and ANTHROPIC_API_KEY
+docker compose up
 ```
 
-This starts Sifthound on port 8000 alongside a SearXNG instance. Try a search:
+Try a search:
 
 ```bash
-curl -s localhost:8000/search \
-  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
-  -d '{"query": "latest python release", "search_depth": "advanced", "include_answer": true}'
+curl -s localhost:8000/search -H "Content-Type: application/json" \
+  -d '{"query": "latest python release", "search_depth": "advanced"}'
 ```
 
-OpenAPI docs are served at http://localhost:8000/docs.
+If you set `API_KEYS`, add `-H "Authorization: Bearer <key>"`. OpenAPI docs are served at
+http://localhost:8000/docs.
+
+### Docker image only
+
+```bash
+docker run -p 8000:8000 ghcr.io/khsarvar/sifthound
+```
+
+`/extract`, `/crawl` and `/map` work on their own. For `/search`, point it at a SearXNG
+instance with the JSON format enabled: `-e SEARXNG_URL=http://your-searxng:8080`. Images are
+published for `linux/amd64` and `linux/arm64`, tagged `latest` and by version (`0.1.0`, `0.1`).
+
+### pip
+
+```bash
+pip install sifthound
+SEARXNG_URL=http://your-searxng:8080 sifthound --port 8000
+```
+
+Configuration is read from environment variables or a `.env` file (see
+[Configuration](#configuration)).
 
 ## Sifthound vs Tavily, Firecrawl and crw
 
@@ -107,7 +133,7 @@ URLs, so Sifthound refuses private, loopback and link-local addresses, checked o
 at connect time against the exact address used, which also stops DNS rebinding.
 
 ### Can I run it without Docker?
-Yes. Install it with pip (see Local development) and point `SEARXNG_URL` at any SearXNG
+Yes: `pip install sifthound`, then run `sifthound` with `SEARXNG_URL` pointing at any SearXNG
 instance with the JSON output format enabled. `/extract`, `/crawl` and `/map` work without
 SearXNG.
 
