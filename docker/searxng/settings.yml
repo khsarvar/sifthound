@@ -1,5 +1,6 @@
-# Minimal SearXNG config for sifthound. Inherits SearXNG defaults; only overrides what the
-# API needs: the JSON output format (off by default) and no bot limiter for server-to-server use.
+# Minimal SearXNG config for sifthound. Inherits SearXNG defaults; overrides what the API needs
+# (the JSON output format, off by default; no bot limiter for server-to-server use) and enables
+# more web engines.
 use_default_settings: true
 
 server:
@@ -13,3 +14,27 @@ search:
   formats:
     - html
     - json
+
+# SearXNG's defaults query only three web engines (Brave, DuckDuckGo, Google CSE). Engines
+# rate-limit or CAPTCHA an IP that searches a lot, and when all three were blocked every search
+# came back empty. These add more independent sources so a search only fails when all of them
+# are blocked at once. Every query still goes to every enabled engine, so this improves
+# resilience, not per-engine load.
+#
+# Checked working 2026-09-25. Not enabled because they failed that check: bing (connection
+# errors), qwant (CAPTCHA), mwmbl (timeouts), yep (HTTP errors).
+# Also available: `- {name: yandex, disabled: false}` (worked, but off by default for users with
+# privacy or jurisdiction concerns).
+engines:
+  - name: google
+    disabled: false
+  - name: startpage # Google results via Startpage
+    disabled: false
+    inactive: false
+  - name: yahoo # Bing's index
+    disabled: false
+  - name: duckduckgo web
+    disabled: false
+  - name: mojeek # independent index
+    disabled: false
+    inactive: false
