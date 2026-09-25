@@ -137,8 +137,8 @@ list your hostname in `MCP_ALLOWED_HOSTS`.
 | License | MIT | Proprietary (hosted service) | AGPL-3.0 | AGPL-3.0 |
 | Self-hosted | Yes | No | Yes | Yes (also a managed API) |
 | Tavily-compatible API | Yes | — | No (own API) | No (own API) |
-| Search source | SearXNG metasearch | Proprietary | — | — |
-| JavaScript rendering | No (static HTML) | — | Yes | — |
+| Search source | SearXNG metasearch | Proprietary | — | SearXNG (bundled) |
+| JavaScript rendering | No (static HTML) | — | Yes | Yes (Lightpanda, Chrome fallback) |
 | MCP server | Yes (HTTP and stdio) | Yes | Yes | Yes |
 | Language | Python | — | TypeScript | Rust |
 
