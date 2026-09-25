@@ -87,54 +87,21 @@
   ]
 }
 </script>
-<style>
-  :root {
-    --bg: #fbfbf9; --fg: #1d1d1b; --muted: #5d5d58; --line: #e3e2dc;
-    --card: #ffffff; --code-bg: #f1f0ea; --accent: #a4451f; --accent-fg: #ffffff;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #151513; --fg: #ecebe6; --muted: #a3a29b; --line: #2f2f2b;
-      --card: #1c1c1a; --code-bg: #232320; --accent: #e27a4e; --accent-fg: #151513;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  main { max-width: 820px; margin: 0 auto; padding: 0 16px 64px; }
-  header { padding: 56px 0 32px; }
-  h1 { font-size: 2.6rem; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.02em; }
-  .tagline { font-size: 1.3rem; color: var(--muted); margin: 0 0 20px; }
-  h2 { font-size: 1.5rem; margin: 48px 0 12px; letter-spacing: -0.01em; }
-  h3 { font-size: 1.05rem; margin: 24px 0 6px; }
-  p { margin: 0 0 14px; }
-  a { color: var(--accent); }
-  .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; }
-  .button {
-    display: inline-block; padding: 9px 16px; border-radius: 8px; text-decoration: none;
-    border: 1px solid var(--line); color: var(--fg); background: var(--card); font-weight: 600;
-  }
-  .button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
-  ul.features { padding-left: 20px; }
-  ul.features li { margin: 4px 0; }
-  code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
-  pre {
-    background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto;
-    font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 0 0 16px;
-  }
-  pre code { background: none; padding: 0; font-size: inherit; }
-  .table-wrap { overflow-x: auto; margin: 0 0 12px; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { font-weight: 600; }
-  .note { color: var(--muted); font-size: 0.95rem; }
-  footer { border-top: 1px solid var(--line); margin-top: 56px; padding-top: 20px; color: var(--muted); font-size: 0.9rem; }
-  @media (max-width: 560px) { h1 { font-size: 2rem; } .tagline { font-size: 1.1rem; } }
-</style>
+<link rel="stylesheet" href="style.css">
+<script src="site.js" defer></script>
 </head>
 <body>
+<nav class="site-nav" aria-label="Main">
+  <div class="nav-inner">
+    <a class="brand" href="./" aria-current="page">Sifthound</a>
+    <div class="nav-links">
+      <a href="./#quick-start">Quick start</a>
+      <a href="./#mcp">MCP</a>
+      <a href="benchmark.html">Benchmark</a>
+      <a href="https://github.com/khsarvar/sifthound">GitHub</a>
+    </div>
+  </div>
+</nav>
 <main>
 <header>
   <h1>Sifthound</h1>
@@ -147,7 +114,7 @@
   </div>
 </header>
 
-<section>
+<section id="features">
   <h2>Features</h2>
   <ul class="features">
     <li><strong>Search</strong> through a <a href="https://github.com/searxng/searxng">SearXNG</a> metasearch instance, with no search API keys</li>
@@ -159,7 +126,7 @@
   </ul>
 </section>
 
-<section>
+<section id="quick-start">
   <h2>Quick start</h2>
   <p>The full stack, with SearXNG for search:</p>
 <pre><code>git clone https://github.com/khsarvar/sifthound &amp;&amp; cd sifthound
@@ -169,7 +136,7 @@ docker compose up</code></pre>
 pip install sifthound</code></pre>
 </section>
 
-<section>
+<section id="tavily">
   <h2>Drop-in replacement for the Tavily API</h2>
   <p>Point the official Tavily Python SDK or LangChain integration at your server:</p>
 <pre><code>from tavily import TavilyClient
@@ -179,7 +146,7 @@ results = client.search("latest python release", search_depth="advanced")</code>
   <p class="note">Tested with <code>tavily-python</code> 0.8.4 (search, extract, crawl, map) and <code>langchain-tavily</code> 0.2.18 (search, extract).</p>
 </section>
 
-<section>
+<section id="mcp">
   <h2>MCP server for Claude, Cursor and other clients</h2>
   <p>Four read-only tools: <code>sifthound_search</code>, <code>sifthound_extract</code>, <code>sifthound_crawl</code> and <code>sifthound_map</code>. Run locally over stdio with <a href="https://docs.astral.sh/uv/">uv</a>:</p>
 <pre><code>claude mcp add sifthound -- uvx sifthound mcp</code></pre>
@@ -188,7 +155,7 @@ results = client.search("latest python release", search_depth="advanced")</code>
   <p class="note">Listed in the official MCP Registry as <code>io.github.khsarvar/sifthound</code>.</p>
 </section>
 
-<section>
+<section id="compare">
   <h2>Sifthound vs Tavily, Firecrawl and crw</h2>
   <div class="table-wrap">
   <table>
@@ -208,7 +175,7 @@ results = client.search("latest python release", search_depth="advanced")</code>
   <p class="note">If you'd rather not run infrastructure, use hosted Tavily. If you need JavaScript-rendered pages, look at Firecrawl or crw. Sifthound is for teams that want the Tavily API on their own servers under a permissive license.</p>
 </section>
 
-<section>
+<section id="faq">
   <h2>FAQ</h2>
   <h3>What is Sifthound?</h3>
   <p>Sifthound is an open-source web search and extraction API for AI agents. It reproduces the Tavily API (<code>/search</code>, <code>/extract</code>, <code>/crawl</code>, <code>/map</code>) on infrastructure you run yourself, using SearXNG for search results, trafilatura for content extraction and BM25 for relevance ranking.</p>
