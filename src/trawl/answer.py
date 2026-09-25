@@ -55,6 +55,11 @@ class AnswerGenerator:
         except anthropic.APIStatusError as e:
             log.warning("answer generation failed (request %s): %s", e.request_id, e.message)
             raise AnswerError(f"Anthropic API error {e.status_code}") from e
+        except TypeError as e:
+            # The SDK raises TypeError (before any request) when no credentials resolve.
+            if "authentication" not in str(e):
+                raise
+            raise AnswerError("no Anthropic credentials configured on this server") from e
 
         if response.stop_reason == "refusal":
             raise AnswerError("the model declined to answer this query")
