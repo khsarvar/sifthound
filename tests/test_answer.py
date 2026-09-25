@@ -2,9 +2,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from trawl.answer import AnswerError, AnswerGenerator
-from trawl.config import Settings
-from trawl.models import SearchResult
+from sifthound.answer import AnswerError, AnswerGenerator
+from sifthound.config import Settings
+from sifthound.models import SearchResult
 
 
 def _generator(exc: Exception) -> AnswerGenerator:

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     fetch_timeout: float = 15.0
     fetch_max_bytes: int = 5_000_000
     fetch_concurrency: int = 10
-    user_agent: str = "trawl/0.1"
+    user_agent: str = "sifthound/0.1"
     # Allow fetching private/loopback addresses. Keep off for any public deployment (SSRF).
     allow_private_networks: bool = False
 

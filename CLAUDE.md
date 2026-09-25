@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-trawl is an open-source, self-hostable alternative to the Tavily API: a FastAPI service exposing
+Sifthound is an open-source, self-hostable alternative to the Tavily API: a FastAPI service exposing
 `/search`, `/extract`, `/crawl`, `/map` with **Tavily-compatible request/response shapes**
-(`src/trawl/models.py`). Compatibility is the product requirement — don't rename fields or
+(`src/sifthound/models.py`). Compatibility is the product requirement — don't rename fields or
 change response shapes; add new behavior as optional fields instead. Errors are returned as
 `HTTPException(status, detail={"error": ...})`; keep that shape consistent across endpoints.
 
@@ -17,7 +17,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # setup
 .venv/bin/pytest                                   # all tests (offline, <1s)
 .venv/bin/pytest tests/test_api.py::test_extract   # single test
 .venv/bin/ruff check . && .venv/bin/ruff format .  # lint + format (line length 100)
-.venv/bin/trawl --port 8000                        # run server; OpenAPI docs at /docs
+.venv/bin/sifthound --port 8000                    # run server; OpenAPI docs at /docs
 docker compose up --build                          # API + SearXNG
 ```
 
