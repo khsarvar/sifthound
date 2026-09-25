@@ -142,6 +142,9 @@ list your hostname in `MCP_ALLOWED_HOSTS`.
 | MCP server | Yes (HTTP and stdio) | Yes | Yes | Yes |
 | Language | Python | — | TypeScript | Rust |
 
+Measured results: [Sifthound vs Tavily search benchmark](https://sarvarkh.com/sifthound/benchmark.html)
+(reproducible with [`bench/`](bench/)).
+
 **When to pick something else:** if you'd rather not run infrastructure, or you want Tavily's
 neural reranking, use hosted Tavily. If you need JavaScript-rendered pages or a scraping
 platform with more features, look at Firecrawl or crw. Sifthound is for teams that want the
