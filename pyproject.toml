@@ -5,10 +5,26 @@ build-backend = "hatchling.build"
 [project]
 name = "sifthound"
 version = "0.1.0"
-description = "Open-source, self-hostable search/extract/crawl API for AI agents with a Tavily-compatible interface."
+description = "Open-source, self-hosted Tavily alternative: a web search, extract and crawl API for AI agents."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
+authors = [{ name = "Sarvar" }]
+keywords = [
+    "tavily", "tavily-alternative", "web-search-api", "search-api", "self-hosted",
+    "ai-agents", "llm", "rag", "searxng", "web-scraping", "crawler", "fastapi",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "anthropic>=1.8",
     "fastapi>=0.115",
@@ -19,13 +35,21 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff==0.16.9"]
+
+[project.urls]
+Homepage = "https://github.com/khsarvar/sifthound"
+Source = "https://github.com/khsarvar/sifthound"
+Issues = "https://github.com/khsarvar/sifthound/issues"
 
 [project.scripts]
 sifthound = "sifthound.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sifthound"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/sifthound", "tests", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
