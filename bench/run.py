@@ -30,13 +30,16 @@ def load_queries(path: Path) -> list[dict]:
 
 def clients(services: list[str], sifthound_url: str, sifthound_key: str) -> dict[str, TavilyClient]:
     out = {}
-    if "tavily" in services:
-        key = os.environ.get("TAVILY_API_KEY")
-        if not key:
-            raise SystemExit("TAVILY_API_KEY is not set (or pass --services sifthound)")
-        out["tavily"] = TavilyClient(api_key=key)
-    if "sifthound" in services:
-        out["sifthound"] = TavilyClient(api_key=sifthound_key, api_base_url=sifthound_url)
+    for name in services:  # keep the given order; it's the report's column order
+        if name == "tavily":
+            key = os.environ.get("TAVILY_API_KEY")
+            if not key:
+                raise SystemExit("TAVILY_API_KEY is not set (or pass --services sifthound)")
+            out["tavily"] = TavilyClient(api_key=key)
+        elif name == "sifthound":
+            out["sifthound"] = TavilyClient(api_key=sifthound_key, api_base_url=sifthound_url)
+        else:
+            raise SystemExit(f"unknown service: {name}")
     return out
 
 
