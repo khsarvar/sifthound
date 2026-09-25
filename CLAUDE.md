@@ -64,6 +64,13 @@ over `httpx.MockTransport` (`tests/conftest.py`) — keep tests network-free; ad
 `PAGES`. MCP tests use the SDK's in-process `Client(mcp)`; HTTP `/mcp` tests need a `localhost`
 base URL (`TestClient`'s default `testserver` host gets 421).
 
+## Releasing
+
+Bump the version in `pyproject.toml` and in `server.json` (top-level and package), merge, then
+push a matching `vX.Y.Z` tag. `.github/workflows/release.yml` refuses mismatched versions and
+publishes to PyPI (trusted publishing), ghcr.io, the MCP Registry (GitHub OIDC; ownership is
+checked via the `mcp-name:` comment in README.md) and GitHub Releases.
+
 ## Security invariant
 
 All outbound fetches of user-supplied URLs must go through `Fetcher`, which rejects non-http(s)
