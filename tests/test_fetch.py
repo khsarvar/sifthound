@@ -2,9 +2,9 @@ import httpcore
 import httpx
 import pytest
 
-from trawl.config import Settings
-from trawl.extract import extract
-from trawl.fetch import Fetcher, FetchError, Page, PublicOnlyBackend, public_only_transport
+from sifthound.config import Settings
+from sifthound.extract import extract
+from sifthound.fetch import Fetcher, FetchError, Page, PublicOnlyBackend, public_only_transport
 
 
 def fetcher(handler) -> Fetcher:

@@ -1,4 +1,4 @@
-# Minimal SearXNG config for trawl. Inherits SearXNG defaults; only overrides what the
+# Minimal SearXNG config for sifthound. Inherits SearXNG defaults; only overrides what the
 # API needs: the JSON output format (off by default) and no bot limiter for server-to-server use.
 use_default_settings: true
 

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "trawl"
+name = "sifthound"
 version = "0.1.0"
 description = "Open-source, self-hostable search/extract/crawl API for AI agents with a Tavily-compatible interface."
 readme = "README.md"
@@ -22,10 +22,10 @@ dependencies = [
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6"]
 
 [project.scripts]
-trawl = "trawl.__main__:main"
+sifthound = "sifthound.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/trawl"]
+packages = ["src/sifthound"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

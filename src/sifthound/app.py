@@ -53,7 +53,7 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
             )
             yield
 
-    app = FastAPI(title="trawl", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="sifthound", version="0.1.0", lifespan=lifespan)
 
     def svc(request: Request) -> SearchService:
         return request.app.state.service

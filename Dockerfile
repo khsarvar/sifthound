@@ -6,4 +6,4 @@ COPY src ./src
 RUN pip install --no-cache-dir .
 
 EXPOSE 8000
-CMD ["trawl", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sifthound", "--host", "0.0.0.0", "--port", "8000"]

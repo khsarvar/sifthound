@@ -2,11 +2,11 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from trawl.app import create_app
-from trawl.config import Settings
-from trawl.fetch import Fetcher
-from trawl.providers import Hit
-from trawl.search import SearchService
+from sifthound.app import create_app
+from sifthound.config import Settings
+from sifthound.fetch import Fetcher
+from sifthound.providers import Hit
+from sifthound.search import SearchService
 
 PAGES = {
     "https://docs.example.com/": """<html><head><title>Example Docs</title></head><body>
