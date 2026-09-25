@@ -174,6 +174,16 @@ Yes. The API server exposes MCP over Streamable HTTP at `/mcp`, and `uvx sifthou
 over stdio for local clients such as Claude Desktop and Cursor. See
 [Use with MCP clients](#use-with-mcp-clients-claude-cursor-).
 
+### Why does `/search` return 502 "failing engines"?
+SearXNG gets its results by querying public search engines (Brave, DuckDuckGo, Google and
+others), and those engines rate-limit or CAPTCHA an IP that sends many searches. When every
+engine is failing, Sifthound returns `502` with the engines and reasons, for example
+`failing engines: brave (Suspended: too many requests), duckduckgo (CAPTCHA)`, rather than an
+empty result list your agent would mistake for "nothing found". Engines recover on their own,
+from minutes to about a day. If some engines still work, you get their results and the server
+logs which engines were down. To reduce blocking, enable more engines in
+`docker/searxng/settings.yml` and avoid bursts of identical searches.
+
 ### Is it safe to expose Sifthound on a public server?
 Set `API_KEYS` so only your clients can call it. `/extract` and `/crawl` fetch caller-supplied
 URLs, so Sifthound refuses private, loopback and link-local addresses, checked on every redirect and

@@ -31,7 +31,10 @@ docker compose up --build                          # API + SearXNG
 Request flow for `/search` (`search.py` → `SearchService`):
 1. `providers.py` — a `SearchProvider` returns raw `Hit`s (title/url/snippet). `SearxngProvider` is
    the only backend; new backends (Brave, Bing, …) just implement the protocol. Providers do no
-   ranking or fetching.
+   ranking or fetching. SearXNG's upstream engines rate-limit by IP; `SearxngProvider` reads its
+   `unresponsive_engines` and raises `ProviderError` (→ 502) when nothing came back because
+   engines failed, instead of an empty 200. Partial failures only log the engine names (never
+   the query).
 2. Domain filtering happens post-hoc (plus `site:` operators in the query), so the provider is
    over-fetched (`max_results * 2`).
 3. `search_depth="advanced"` or `include_raw_content` → pages are fetched (`fetch.py`) and
