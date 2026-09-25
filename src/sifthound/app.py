@@ -1,59 +1,101 @@
-import asyncio
 import logging
-import re
-import time
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from urllib.parse import parse_qs
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.responses import JSONResponse
+from starlette.routing import Route
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-from .answer import AnswerError, AnswerGenerator
+from . import __version__
+from .answer import AnswerGenerator
 from .config import Settings, get_settings
-from .crawl import traverse
-from .extract import extract
-from .fetch import Fetcher, FetchError, public_only_transport
+from .fetch import Fetcher, public_only_transport
+from .mcp_server import build_mcp, transport_security
 from .models import (
     ApiRequest,
     CrawlRequest,
     CrawlResponse,
     ExtractRequest,
     ExtractResponse,
-    ExtractResult,
-    FailedResult,
     MapRequest,
     MapResponse,
     SearchRequest,
     SearchResponse,
 )
-from .providers import ProviderError, SearxngProvider
+from .operations import OperationError, run_crawl, run_extract, run_map, run_search
+from .providers import SearxngProvider
 from .search import SearchService
 
 log = logging.getLogger(__name__)
 bearer = HTTPBearer(auto_error=False)
+UNAUTHORIZED = "Unauthorized: missing or invalid API key"
+
+
+@asynccontextmanager
+async def service_context(settings: Settings) -> AsyncIterator[SearchService]:
+    """The production SearchService, with its HTTP clients open for the context's lifetime.
+    Used by the API server's lifespan and by `sifthound mcp` (stdio)."""
+    # User-supplied URLs get their own client whose transport refuses non-public
+    # addresses at connect time; SearXNG is often on a private network, so it can't share.
+    fetch_transport = None if settings.allow_private_networks else public_only_transport()
+    async with (
+        httpx.AsyncClient() as client,
+        httpx.AsyncClient(transport=fetch_transport) as fetch_client,
+    ):
+        yield SearchService(
+            provider=SearxngProvider(client, settings.searxng_url),
+            fetcher=Fetcher(fetch_client, settings),
+            answerer=AnswerGenerator(settings) if settings.answer_enabled else None,
+        )
+
+
+class RequireApiKey:
+    """ASGI wrapper enforcing API_KEYS on the MCP endpoint, like `authorize` does for REST.
+    Accepts `Authorization: Bearer <key>` or, for clients that can't set headers, `?api_key=`."""
+
+    def __init__(self, app: ASGIApp, api_keys: list[str]):
+        self.app = app
+        self.api_keys = api_keys
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and self.api_keys and self._key(scope) not in self.api_keys:
+            response = JSONResponse({"detail": {"error": UNAUTHORIZED}}, status_code=401)
+            await response(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+    @staticmethod
+    def _key(scope: Scope) -> str | None:
+        auth = dict(scope["headers"]).get(b"authorization", b"").decode("latin-1")
+        if auth[:7].lower() == "bearer ":
+            return auth[7:].strip()
+        return parse_qs(scope.get("query_string", b"").decode()).get("api_key", [None])[0]
 
 
 def create_app(settings: Settings | None = None, service: SearchService | None = None) -> FastAPI:
     """Build the app. Tests inject `service` (with fake provider/fetcher) to stay offline."""
     settings = settings or get_settings()
 
+    mcp = build_mcp(lambda: app.state.service, settings)
+    mcp_http = mcp.streamable_http_app(transport_security=transport_security(settings))
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        # User-supplied URLs get their own client whose transport refuses non-public
-        # addresses at connect time; SearXNG is often on a private network, so it can't share.
-        fetch_transport = None if settings.allow_private_networks else public_only_transport()
-        async with (
-            httpx.AsyncClient() as client,
-            httpx.AsyncClient(transport=fetch_transport) as fetch_client,
-        ):
-            app.state.service = service or SearchService(
-                provider=SearxngProvider(client, settings.searxng_url),
-                fetcher=Fetcher(fetch_client, settings),
-                answerer=AnswerGenerator(settings) if settings.answer_enabled else None,
-            )
-            yield
+        # Mounted, the MCP app's own lifespan never runs, so its session manager starts here.
+        async with mcp.session_manager.run():
+            if service is not None:
+                app.state.service = service
+                yield
+            else:
+                async with service_context(settings) as app.state.service:
+                    yield
 
-    app = FastAPI(title="sifthound", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="sifthound", version=__version__, lifespan=lifespan)
+    app.router.routes.append(Route("/mcp", RequireApiKey(mcp_http, settings.api_keys)))
 
     def svc(request: Request) -> SearchService:
         return request.app.state.service
@@ -63,7 +105,10 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
             return
         key = creds.credentials if creds else body.api_key
         if key not in settings.api_keys:
-            raise HTTPException(401, detail={"error": "Unauthorized: missing or invalid API key"})
+            raise HTTPException(401, detail={"error": UNAUTHORIZED})
+
+    def failed(e: OperationError) -> HTTPException:
+        return HTTPException(e.status, detail={"error": e.message})
 
     @app.get("/health")
     async def health() -> dict:
@@ -76,29 +121,10 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
         service: SearchService = Depends(svc),
     ) -> SearchResponse:
         authorize(req, creds)
-        start = time.perf_counter()
-        if req.include_answer and service.answerer is None:
-            raise HTTPException(400, detail={"error": "include_answer is disabled on this server"})
         try:
-            results, images = await service.search(req)
-        except ProviderError as e:
-            raise HTTPException(502, detail={"error": str(e)}) from e
-
-        answer = None
-        if req.include_answer:
-            depth = req.include_answer if isinstance(req.include_answer, str) else "basic"
-            try:
-                answer = await service.answerer.generate(req.query, results, depth)
-            except AnswerError as e:
-                raise HTTPException(502, detail={"error": f"answer generation failed: {e}"}) from e
-
-        return SearchResponse(
-            query=req.query,
-            answer=answer,
-            images=images,
-            results=results,
-            response_time=round(time.perf_counter() - start, 2),
-        )
+            return await run_search(service, req)
+        except OperationError as e:
+            raise failed(e) from e
 
     @app.post("/extract", response_model=ExtractResponse)
     async def extract_urls(
@@ -107,31 +133,10 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
         service: SearchService = Depends(svc),
     ) -> ExtractResponse:
         authorize(req, creds)
-        start = time.perf_counter()
-        urls = [req.urls] if isinstance(req.urls, str) else req.urls
-        if not urls or len(urls) > 20:
-            raise HTTPException(400, detail={"error": "provide between 1 and 20 urls"})
-
-        async def one(url: str) -> ExtractResult | FailedResult:
-            try:
-                page = await service.fetcher.fetch(url)
-            except FetchError as e:
-                return FailedResult(url=url, error=str(e))
-            doc = await asyncio.to_thread(
-                extract, page, fmt=req.format, advanced=req.extract_depth == "advanced"
-            )
-            if not doc.content:
-                return FailedResult(url=url, error="no extractable content")
-            return ExtractResult(
-                url=url, raw_content=doc.content, images=doc.images if req.include_images else []
-            )
-
-        outcomes = await asyncio.gather(*(one(u) for u in urls))
-        return ExtractResponse(
-            results=[o for o in outcomes if isinstance(o, ExtractResult)],
-            failed_results=[o for o in outcomes if isinstance(o, FailedResult)],
-            response_time=round(time.perf_counter() - start, 2),
-        )
+        try:
+            return await run_extract(service, req)
+        except OperationError as e:
+            raise failed(e) from e
 
     @app.post("/crawl", response_model=CrawlResponse)
     async def crawl(
@@ -140,29 +145,10 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
         service: SearchService = Depends(svc),
     ) -> CrawlResponse:
         authorize(req, creds)
-        start = time.perf_counter()
-        req.limit = min(req.limit, settings.crawl_max_limit)
         try:
-            base_url, _, docs = await traverse(
-                req,
-                service.fetcher,
-                fetch_leaves=True,
-                fmt=req.format,
-                advanced=req.extract_depth == "advanced",
-            )
-        except re.error as e:
-            raise HTTPException(400, detail={"error": f"invalid path/domain regex: {e}"}) from e
-        return CrawlResponse(
-            base_url=base_url,
-            results=[
-                ExtractResult(
-                    url=d.url, raw_content=d.content, images=d.images if req.include_images else []
-                )
-                for d in docs
-                if d.content
-            ],
-            response_time=round(time.perf_counter() - start, 2),
-        )
+            return await run_crawl(service, settings, req)
+        except OperationError as e:
+            raise failed(e) from e
 
     @app.post("/map", response_model=MapResponse)
     async def map_site(
@@ -171,14 +157,9 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
         service: SearchService = Depends(svc),
     ) -> MapResponse:
         authorize(req, creds)
-        start = time.perf_counter()
-        req.limit = min(req.limit, settings.crawl_max_limit)
         try:
-            base_url, urls, _ = await traverse(req, service.fetcher, fetch_leaves=False)
-        except re.error as e:
-            raise HTTPException(400, detail={"error": f"invalid path/domain regex: {e}"}) from e
-        return MapResponse(
-            base_url=base_url, results=urls, response_time=round(time.perf_counter() - start, 2)
-        )
+            return await run_map(service, settings, req)
+        except OperationError as e:
+            raise failed(e) from e
 
     return app

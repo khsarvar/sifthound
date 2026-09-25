@@ -17,7 +17,8 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # setup
 .venv/bin/pytest                                   # all tests (offline, <1s)
 .venv/bin/pytest tests/test_api.py::test_extract   # single test
 .venv/bin/ruff check . && .venv/bin/ruff format .  # lint + format (line length 100)
-.venv/bin/sifthound --port 8000                    # run server; OpenAPI docs at /docs
+.venv/bin/sifthound --port 8000                    # run server; OpenAPI docs at /docs, MCP at /mcp
+.venv/bin/sifthound mcp                            # MCP over stdio
 docker compose up --build                          # API + SearXNG
 ```
 
@@ -43,11 +44,25 @@ Request flow for `/search` (`search.py` → `SearchService`):
 
 `/crawl` and `/map` share `crawl.traverse` (BFS over `Document.links`). `/map` passes
 `fetch_leaves=False` so pages at `max_depth` are listed but not fetched. User-supplied path/domain
-filters are regexes; `re.error` is mapped to 400 in `app.py`.
+filters are regexes; `re.error` becomes a 400.
 
-`app.create_app(settings, service)` builds everything in the lifespan with two `httpx.AsyncClient`s:
-a shared one (SearXNG) and a guarded one for `Fetcher` (see Security invariant). Tests inject a `SearchService` built from `FakeProvider` + a `Fetcher` over
-`httpx.MockTransport` (`tests/conftest.py`) — keep tests network-free; add fixture pages to `PAGES`.
+Endpoint logic lives in `operations.py` (`run_search`/`run_extract`/`run_crawl`/`run_map`), shared
+by the REST handlers in `app.py` and the MCP tools in `mcp_server.py`. Operations raise
+`OperationError(status, message)`; REST maps it to `HTTPException(status, {"error": ...})`, MCP to a
+`ToolError`. Put new endpoint behavior in the operation, not the handler, so both surfaces get it.
+
+MCP (`mcp_server.build_mcp`, SDK v2 `MCPServer`) is served two ways: Streamable HTTP mounted at
+`/mcp` in `create_app`, behind `RequireApiKey` (same `API_KEYS`, Bearer or `?api_key=`) and a
+Host allowlist (`MCP_ALLOWED_HOSTS` + localhost, else 421); and stdio via `sifthound mcp`
+(`__main__.py`). Mounted, the MCP app's own lifespan never runs, so `create_app`'s lifespan must
+enter `mcp.session_manager.run()`. In stdio mode stdout is the protocol: log to stderr only.
+
+`app.service_context(settings)` builds the production `SearchService` with two `httpx.AsyncClient`s:
+a shared one (SearXNG) and a guarded one for `Fetcher` (see Security invariant); the API lifespan
+and stdio mode both use it. Tests inject a `SearchService` built from `FakeProvider` + a `Fetcher`
+over `httpx.MockTransport` (`tests/conftest.py`) — keep tests network-free; add fixture pages to
+`PAGES`. MCP tests use the SDK's in-process `Client(mcp)`; HTTP `/mcp` tests need a `localhost`
+base URL (`TestClient`'s default `testserver` host gets 421).
 
 ## Security invariant
 
