@@ -1,10 +1,13 @@
 """Web search backends. A provider only returns raw hits (title/url/snippet); ranking,
 content extraction and answers happen in search.py so every backend gets them for free."""
 
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 
 import httpx
+
+log = logging.getLogger(__name__)
 
 
 class ProviderError(Exception):
@@ -45,9 +48,11 @@ class SearxngProvider:
             params["time_range"] = _TIME_RANGES.get(time_range, time_range)
         hits: list[Hit] = []
         seen: set[str] = set()
+        failed: dict[str, None] = {}  # engines SearXNG reported as failing (ordered set)
         # SearXNG pages hold ~10 results; fetch more pages until we have enough.
         for page in range(1, 4):
-            results = await self._query({**params, "pageno": page})
+            results, page_failed = await self._query({**params, "pageno": page})
+            failed.update(dict.fromkeys(page_failed))
             if not results:
                 break
             for r in results:
@@ -65,19 +70,35 @@ class SearxngProvider:
                 )
             if len(hits) >= max_results:
                 break
+        if failed:
+            engines = ", ".join(failed)
+            if not hits:
+                # Engines rate-limit or block SearXNG's IP; without this an agent would get an
+                # empty 200 and conclude nothing exists.
+                raise ProviderError(f"SearXNG returned no results; failing engines: {engines}")
+            log.warning("SearXNG engines failing, results may be incomplete: %s", engines)
         return hits
 
     async def images(self, query: str, *, max_results: int) -> list[str]:
-        results = await self._query({"q": query, "categories": "images"})
+        results, failed = await self._query({"q": query, "categories": "images"})
+        if failed:
+            log.warning("SearXNG image engines failing: %s", ", ".join(failed))
         urls = [r["img_src"] for r in results if r.get("img_src")]
         return list(dict.fromkeys(urls))[:max_results]
 
-    async def _query(self, params: dict) -> list[dict]:
+    async def _query(self, params: dict) -> tuple[list[dict], list[str]]:
+        """One SearXNG request: (results, failing engines as "name (reason)")."""
         try:
             resp = await self._client.get(
                 f"{self._base_url}/search", params={**params, "format": "json"}, timeout=20
             )
             resp.raise_for_status()
-            return resp.json().get("results", [])
+            data = resp.json()
         except (httpx.HTTPError, ValueError) as e:
             raise ProviderError(f"SearXNG request failed: {e}") from e
+        failed = [
+            f"{entry[0]} ({entry[1]})" if len(entry) > 1 else str(entry[0])
+            for entry in data.get("unresponsive_engines") or []
+            if isinstance(entry, list | tuple) and entry
+        ]
+        return data.get("results", []), failed
