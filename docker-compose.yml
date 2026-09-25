@@ -2,6 +2,8 @@ name: sifthound
 
 services:
   api:
+    # `docker compose up` pulls the published image; `docker compose up --build` builds this checkout.
+    image: ghcr.io/khsarvar/sifthound:latest
     build: .
     ports:
       - "8000:8000"
