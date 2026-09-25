@@ -45,16 +45,20 @@ Request flow for `/search` (`search.py` → `SearchService`):
 `fetch_leaves=False` so pages at `max_depth` are listed but not fetched. User-supplied path/domain
 filters are regexes; `re.error` is mapped to 400 in `app.py`.
 
-`app.create_app(settings, service)` builds everything in the lifespan with one shared
-`httpx.AsyncClient`. Tests inject a `SearchService` built from `FakeProvider` + a `Fetcher` over
+`app.create_app(settings, service)` builds everything in the lifespan with two `httpx.AsyncClient`s:
+a shared one (SearXNG) and a guarded one for `Fetcher` (see Security invariant). Tests inject a `SearchService` built from `FakeProvider` + a `Fetcher` over
 `httpx.MockTransport` (`tests/conftest.py`) — keep tests network-free; add fixture pages to `PAGES`.
 
 ## Security invariant
 
 All outbound fetches of user-supplied URLs must go through `Fetcher`, which rejects non-http(s)
 schemes and non-public IPs on every redirect hop (redirects are followed manually for this reason).
-Don't call `httpx` with `follow_redirects=True` on user URLs or bypass `Fetcher`. Tests set
-`allow_private_networks=True` only because the mock hosts don't resolve.
+In the app, `Fetcher` runs on its own client over `public_only_transport()`, whose
+`PublicOnlyBackend` resolves each host, refuses non-public addresses, and connects to the checked
+IP — this is what defeats DNS rebinding, so don't give `Fetcher` the shared client (SearXNG is
+usually on a private network). Don't call `httpx` with `follow_redirects=True` on user URLs or
+bypass `Fetcher`. Tests set `allow_private_networks=True` only because the mock hosts don't
+resolve; `tests/test_fetch.py` covers the connect-time guard with a fake resolver.
 
 ## Not implemented (accepted for compatibility, ignored)
 
