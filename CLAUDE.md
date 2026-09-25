@@ -49,6 +49,13 @@ filters are regexes; `re.error` is mapped to 400 in `app.py`.
 a shared one (SearXNG) and a guarded one for `Fetcher` (see Security invariant). Tests inject a `SearchService` built from `FakeProvider` + a `Fetcher` over
 `httpx.MockTransport` (`tests/conftest.py`) — keep tests network-free; add fixture pages to `PAGES`.
 
+## Releasing
+
+Bump the version in `pyproject.toml` and in `server.json` (top-level and package), merge, then
+push a matching `vX.Y.Z` tag. `.github/workflows/release.yml` refuses mismatched versions and
+publishes to PyPI (trusted publishing), ghcr.io, the MCP Registry (GitHub OIDC; ownership is
+checked via the `mcp-name:` comment in README.md) and GitHub Releases.
+
 ## Security invariant
 
 All outbound fetches of user-supplied URLs must go through `Fetcher`, which rejects non-http(s)

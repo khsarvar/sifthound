@@ -1,7 +1,7 @@
 name: Release
 
-# Push a tag like v0.1.0 (matching the version in pyproject.toml) to publish:
-# the package to PyPI, the Docker image to ghcr.io, and a GitHub Release.
+# Push a tag like v0.1.0 (matching the version in pyproject.toml and server.json) to publish:
+# the package to PyPI, the Docker image to ghcr.io, the MCP Registry entry, and a GitHub Release.
 on:
   push:
     tags: ["v*"]
@@ -21,13 +21,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Check tag matches package version
+      - name: Check tag matches package and server.json versions
         run: |
           version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
           if [ "v$version" != "$GITHUB_REF_NAME" ]; then
             echo "::error::tag $GITHUB_REF_NAME does not match pyproject.toml version $version"
             exit 1
           fi
+          for v in $(jq -r '.version, .packages[].version' server.json); do
+            if [ "$v" != "$version" ]; then
+              echo "::error::server.json version $v does not match pyproject.toml version $version"
+              exit 1
+            fi
+          done
       - run: pip install build twine
       - run: python -m build
       - run: twine check --strict dist/*
@@ -52,6 +58,21 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  mcp-registry:
+    # After PyPI: the Registry verifies ownership via the `mcp-name:` line in the PyPI description.
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
 
   docker:
     needs: checks
