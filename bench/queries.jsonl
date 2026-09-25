@@ -1,0 +1,45 @@
+{"id": "f01", "kind": "factual", "query": "What is the capital of Australia?", "expect": ["Canberra"]}
+{"id": "f02", "kind": "factual", "query": "Who wrote One Hundred Years of Solitude?", "expect": ["García Márquez", "Garcia Marquez"]}
+{"id": "f03", "kind": "factual", "query": "What year did the Berlin Wall fall?", "expect": ["1989"]}
+{"id": "f04", "kind": "factual", "query": "Who won the 2024 Nobel Prize in Physics?", "expect": ["Hopfield", "Hinton"]}
+{"id": "f05", "kind": "factual", "query": "Who created the Python programming language?", "expect": ["van Rossum"]}
+{"id": "f06", "kind": "factual", "query": "What is the tallest mountain in Africa?", "expect": ["Kilimanjaro"]}
+{"id": "f07", "kind": "factual", "query": "Speed of light in vacuum in meters per second", "expect": ["299,792,458", "299792458", "299 792 458"]}
+{"id": "f08", "kind": "factual", "query": "Who painted The Persistence of Memory?", "expect": ["Dalí", "Dali"]}
+{"id": "f09", "kind": "factual", "query": "What is the largest moon of Saturn?", "expect": ["Titan"]}
+{"id": "f10", "kind": "factual", "query": "Which company developed the Kotlin programming language?", "expect": ["JetBrains"]}
+{"id": "f11", "kind": "factual", "query": "What does HTTP status code 418 mean?", "expect": ["teapot"]}
+{"id": "f12", "kind": "factual", "query": "Who is the original author of the Linux kernel?", "expect": ["Torvalds"]}
+{"id": "f13", "kind": "factual", "query": "What is the default port for PostgreSQL?", "expect": ["5432"]}
+{"id": "f14", "kind": "factual", "query": "When was the first iPhone released?", "expect": ["2007"]}
+{"id": "f15", "kind": "factual", "query": "Who discovered penicillin?", "expect": ["Fleming"]}
+{"id": "f16", "kind": "factual", "query": "Boiling point of water in Fahrenheit at sea level", "expect": ["212"]}
+{"id": "f17", "kind": "factual", "query": "Which planet has the Great Red Spot?", "expect": ["Jupiter"]}
+{"id": "f18", "kind": "factual", "query": "Who are the authors of the paper Attention Is All You Need?", "expect": ["Vaswani"]}
+{"id": "f19", "kind": "factual", "query": "How many bytes are in a kibibyte?", "expect": ["1024", "1,024"]}
+{"id": "f20", "kind": "factual", "query": "Who founded SpaceX?", "expect": ["Musk"]}
+{"id": "f21", "kind": "factual", "query": "What is the SI unit of electrical resistance?", "expect": ["ohm"]}
+{"id": "f22", "kind": "factual", "query": "In which city is the Louvre museum?", "expect": ["Paris"]}
+{"id": "f23", "kind": "factual", "query": "Who composed The Four Seasons?", "expect": ["Vivaldi"]}
+{"id": "f24", "kind": "factual", "query": "What is the chemical formula of table salt?", "expect": ["NaCl"]}
+{"id": "f25", "kind": "factual", "query": "Which language did Google make the preferred language for Android development in 2019?", "expect": ["Kotlin"]}
+{"id": "d01", "kind": "docs", "query": "python asyncio gather return_exceptions", "expect_domain": "docs.python.org"}
+{"id": "d02", "kind": "docs", "query": "rust ownership and borrowing explained", "expect_domain": "doc.rust-lang.org"}
+{"id": "d03", "kind": "docs", "query": "postgresql create index concurrently", "expect_domain": "postgresql.org"}
+{"id": "d04", "kind": "docs", "query": "react useEffect cleanup function", "expect_domain": "react.dev"}
+{"id": "d05", "kind": "docs", "query": "kubernetes liveness vs readiness probe", "expect_domain": "kubernetes.io"}
+{"id": "d06", "kind": "docs", "query": "git rebase interactive squash commits", "expect_domain": "git-scm.com"}
+{"id": "d07", "kind": "docs", "query": "fetch api AbortController timeout", "expect_domain": "developer.mozilla.org"}
+{"id": "d08", "kind": "docs", "query": "fastapi dependency injection", "expect_domain": "fastapi.tiangolo.com"}
+{"id": "d09", "kind": "docs", "query": "docker compose healthcheck", "expect_domain": "docs.docker.com"}
+{"id": "d10", "kind": "docs", "query": "typescript satisfies operator", "expect_domain": "typescriptlang.org"}
+{"id": "n01", "kind": "news", "query": "artificial intelligence regulation", "topic": "news", "time_range": "week"}
+{"id": "n02", "kind": "news", "query": "central bank interest rate decision", "topic": "news", "time_range": "week"}
+{"id": "n03", "kind": "news", "query": "climate change policy", "topic": "news", "time_range": "week"}
+{"id": "n04", "kind": "news", "query": "semiconductor export controls", "topic": "news", "time_range": "week"}
+{"id": "n05", "kind": "news", "query": "rocket launch", "topic": "news", "time_range": "week"}
+{"id": "o01", "kind": "open", "query": "best self-hosted alternatives to Google Photos"}
+{"id": "o02", "kind": "open", "query": "how to reduce docker image size for python apps"}
+{"id": "o03", "kind": "open", "query": "sourdough starter not rising"}
+{"id": "o04", "kind": "open", "query": "postgres vs clickhouse for analytics"}
+{"id": "o05", "kind": "open", "query": "how to run effective remote standups"}
