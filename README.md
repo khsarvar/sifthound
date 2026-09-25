@@ -177,4 +177,6 @@ hostile multi-tenant deployments, also restrict egress at the network level.
 
 ## License
 
-MIT
+Sifthound is released under the [MIT License](LICENSE). The "Sifthound" name is covered
+separately by the [trademark policy](TRADEMARKS.md): use the code freely, but forks and hosted
+services need a different name.
