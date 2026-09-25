@@ -12,7 +12,7 @@ from .answer import AnswerError, AnswerGenerator
 from .config import Settings, get_settings
 from .crawl import traverse
 from .extract import extract
-from .fetch import Fetcher, FetchError
+from .fetch import Fetcher, FetchError, public_only_transport
 from .models import (
     ApiRequest,
     CrawlRequest,
@@ -39,10 +39,16 @@ def create_app(settings: Settings | None = None, service: SearchService | None =
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        async with httpx.AsyncClient() as client:
+        # User-supplied URLs get their own client whose transport refuses non-public
+        # addresses at connect time; SearXNG is often on a private network, so it can't share.
+        fetch_transport = None if settings.allow_private_networks else public_only_transport()
+        async with (
+            httpx.AsyncClient() as client,
+            httpx.AsyncClient(transport=fetch_transport) as fetch_client,
+        ):
             app.state.service = service or SearchService(
                 provider=SearxngProvider(client, settings.searxng_url),
-                fetcher=Fetcher(client, settings),
+                fetcher=Fetcher(fetch_client, settings),
                 answerer=AnswerGenerator(settings) if settings.answer_enabled else None,
             )
             yield

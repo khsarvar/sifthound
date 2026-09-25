@@ -56,8 +56,10 @@ Environment variables (see `.env.example`): `API_KEYS`, `SEARXNG_URL`, `ANSWER_E
 
 **Security:** `/extract` and `/crawl` make the server fetch caller-supplied URLs. Requests to
 private, loopback and link-local addresses are blocked (including via redirects) unless
-`ALLOW_PRIVATE_NETWORKS=true`. For hostile multi-tenant deployments, also restrict egress at
-the network level, since the check doesn't prevent DNS rebinding.
+`ALLOW_PRIVATE_NETWORKS=true`. The check runs at connect time against the exact address being
+connected to, so DNS rebinding can't get around it. Fetches of user URLs ignore
+`HTTP(S)_PROXY`, since a proxy would hide the destination address. As defense in depth for
+hostile multi-tenant deployments, also restrict egress at the network level.
 
 ## License
 
