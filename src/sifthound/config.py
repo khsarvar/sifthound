@@ -30,7 +30,11 @@ class Settings(BaseSettings):
 
     crawl_max_limit: int = 200
 
-    @field_validator("api_keys", mode="before")
+    # Extra Host headers the MCP endpoint (/mcp) accepts besides localhost, e.g.
+    # "search.example.com,search.example.com:*". Others get 421 (DNS-rebinding protection).
+    mcp_allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=list)
+
+    @field_validator("api_keys", "mcp_allowed_hosts", mode="before")
     @classmethod
     def _split_keys(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):

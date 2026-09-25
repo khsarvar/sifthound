@@ -11,11 +11,14 @@ replacement for the [Tavily](https://tavily.com) API.** It serves the same `/sea
 written for Tavily (including the official Python SDK and the LangChain integration) works
 against your own server by changing only the base URL. It needs no search API key.
 
+<!-- mcp-name: io.github.khsarvar/sifthound -->
+
 - **Search** through a [SearXNG](https://github.com/searxng/searxng) metasearch instance, with no search API keys
 - **Extraction** of clean markdown or text from web pages with [trafilatura](https://github.com/adbar/trafilatura)
 - **Ranking**: BM25 relevance blended with the upstream engine's order; `advanced` depth fetches each page and returns its most relevant chunks
 - **Answers** (`include_answer`) written by Claude from the retrieved results
 - **Crawling and site maps** with depth, breadth, limit and regex path/domain filters
+- **MCP server** for Claude Code, Claude Desktop, Cursor and other MCP clients, over HTTP at `/mcp` or stdio with `sifthound mcp`
 - **SSRF protection**: private and internal addresses are blocked, including via redirects and DNS rebinding
 - **MIT licensed**
 
@@ -88,6 +91,45 @@ SEARXNG_URL=http://your-searxng:8080 sifthound --port 8000
 Configuration is read from environment variables or a `.env` file (see
 [Configuration](#configuration)).
 
+## Use with MCP clients (Claude, Cursor, ...)
+
+Sifthound is also an [MCP](https://modelcontextprotocol.io) server with four read-only tools:
+`sifthound_search`, `sifthound_extract`, `sifthound_crawl` and `sifthound_map`.
+
+**Connect to a running Sifthound server** (Streamable HTTP at `/mcp`). With Claude Code:
+
+```bash
+claude mcp add --transport http sifthound http://localhost:8000/mcp \
+  --header "Authorization: Bearer <key>"      # omit the header if API_KEYS is empty
+```
+
+**Or run it locally over stdio** with [uv](https://docs.astral.sh/uv/), no server needed.
+`SEARXNG_URL` is only needed for `sifthound_search`:
+
+```bash
+claude mcp add sifthound -e SEARXNG_URL=http://your-searxng:8080 -- uvx sifthound mcp
+```
+
+Claude Desktop (`claude_desktop_config.json`), Cursor (`.cursor/mcp.json`) and most other clients
+take the same command as JSON:
+
+```json
+{
+  "mcpServers": {
+    "sifthound": {
+      "command": "uvx",
+      "args": ["sifthound", "mcp"],
+      "env": { "SEARXNG_URL": "http://your-searxng:8080" }
+    }
+  }
+}
+```
+
+API keys work as for the REST API: send `Authorization: Bearer <key>`, or append
+`?api_key=<key>` to the URL for clients that can't set headers (URLs can end up in logs, so
+prefer the header). The HTTP endpoint only answers requests addressed to `localhost` unless you
+list your hostname in `MCP_ALLOWED_HOSTS`.
+
 ## Sifthound vs Tavily, Firecrawl and crw
 
 | | Sifthound | [Tavily](https://tavily.com) | [Firecrawl](https://github.com/firecrawl/firecrawl) | [crw](https://github.com/fastcrw/crw) |
@@ -97,7 +139,7 @@ Configuration is read from environment variables or a `.env` file (see
 | Tavily-compatible API | Yes | — | No (own API) | No (own API) |
 | Search source | SearXNG metasearch | Proprietary | — | — |
 | JavaScript rendering | No (static HTML) | — | Yes | — |
-| MCP server | Not yet | Yes | Yes | Yes |
+| MCP server | Yes (HTTP and stdio) | Yes | Yes | Yes |
 | Language | Python | — | TypeScript | Rust |
 
 **When to pick something else:** if you'd rather not run infrastructure, or you want Tavily's
@@ -126,6 +168,11 @@ key is `ANTHROPIC_API_KEY`, used when a request sets `include_answer`.
 ### Does it work with LangChain?
 Yes, through the official `langchain-tavily` package. Pass `api_base_url` pointing at your
 Sifthound server, as in the example above.
+
+### Does Sifthound have an MCP server?
+Yes. The API server exposes MCP over Streamable HTTP at `/mcp`, and `uvx sifthound mcp` runs it
+over stdio for local clients such as Claude Desktop and Cursor. See
+[Use with MCP clients](#use-with-mcp-clients-claude-cursor-).
 
 ### Is it safe to expose Sifthound on a public server?
 Set `API_KEYS` so only your clients can call it. `/extract` and `/crawl` fetch caller-supplied
@@ -166,7 +213,11 @@ accepted but ignored; relevance scores come from BM25, not a neural reranker.
 
 Environment variables (see `.env.example`): `API_KEYS`, `SEARXNG_URL`, `ANSWER_ENABLED`,
 `ANSWER_MODEL`, `ANSWER_EFFORT`, `FETCH_TIMEOUT`, `FETCH_CONCURRENCY`, `FETCH_MAX_BYTES`,
-`ALLOW_PRIVATE_NETWORKS`, `CRAWL_MAX_LIMIT`.
+`ALLOW_PRIVATE_NETWORKS`, `CRAWL_MAX_LIMIT`, `MCP_ALLOWED_HOSTS`.
+
+`MCP_ALLOWED_HOSTS` lists the hostnames the `/mcp` endpoint answers besides `localhost`, for
+example `search.example.com,search.example.com:*`. Requests addressed to any other host get
+`421`, which protects a local server from DNS-rebinding attacks by web pages.
 
 **Security:** `/extract` and `/crawl` make the server fetch caller-supplied URLs. Requests to
 private, loopback and link-local addresses are blocked (including via redirects) unless
